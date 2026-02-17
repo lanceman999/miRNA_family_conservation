@@ -233,12 +233,20 @@ QX
 
 
 # pan-miRNA visualization in elegans
-all_predictions <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/elegans/all_strain_predictions/ce_all_142_updated_20260212.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
-  dplyr::select("contig","start","end","strand","gene_id","seed","strain")
+all_predictions_ce <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/elegans/all_strain_predictions/ce_all_142_updated_20260212.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
+  dplyr::select("contig","start","end","strand","gene_id","seed","strain") #%>%
+  dplyr::filter(!seed == "seed=(None)") ############### Removing miRNA family members that do not have seed support
+
+most_mir35 <- all_predictions_ce %>%
+  dplyr::filter(gene_id == "Mir-36") %>%
+  dplyr::group_by(strain) %>%
+  dplyr::mutate(count = n())# %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(count == max(count))
   
 ce_strains <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/elegans/all_strain_predictions/ce_142_strains.tsv", col_names = "strain") %>% dplyr::pull()
 
-counts <- all_predictions %>%
+counts <- all_predictions_ce %>%
   dplyr::group_by(gene_id,strain) %>%
   dplyr::mutate(count = n()) %>%
   dplyr::ungroup()
@@ -246,7 +254,7 @@ counts <- all_predictions %>%
 N2_counts <- counts %>% dplyr::filter(strain == "N2") %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count) %>% dplyr::mutate(strain_count = 1)
 CGC1_counts <- counts %>% dplyr::filter(strain == 'CGC1') %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count)%>% dplyr::mutate(strain_count = 1)
 
-strain_count <- all_predictions %>%
+strain_count <- all_predictions_ce %>%
   dplyr::filter(strain != "N2" & strain != "CGC1") %>%
   dplyr::group_by(gene_id) %>%
   dplyr::summarise(n_strain = n_distinct(strain), .groups = "drop")
@@ -280,14 +288,14 @@ ggplot() +
     panel.background = element_blank(),
     axis.title.x = element_blank())
 
-strain_count_ce <- all_predictions %>%
+strain_count_ce <- all_predictions_ce %>%
   dplyr::group_by(gene_id) %>%
   dplyr::summarise(n_strain = n_distinct(strain), .groups = "drop")
 
 ggplot() + 
   geom_col(data = strain_count_ce, aes(x = gene_id, y = n_strain), fill = '#DB6333', alpha = 0.7) +
   geom_hline(yintercept = 142, linetype = 'dashed', color =' black', linewidth = 1.5)+
-  labs(y = "Count among wild strains") +
+  labs(y = "Count among all 142 Ce strains") +
   theme(
     panel.border = element_rect(color = 'black', fill = NA),
     panel.background = element_blank(),
@@ -304,7 +312,8 @@ ggplot() +
 
 # pan-miRNA visualization in briggsae
 all_predictions <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/briggsae/all_strain_predictions/64_Cb_final_20260212.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
-  dplyr::select("contig","start","end","strand","gene_id","seed","strain")
+  dplyr::select("contig","start","end","strand","gene_id","seed","strain") %>%
+  dplyr::filter(!seed == "seed=(None)") ############### Removing miRNA family members that do not have seed support
 
 cb_strains <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/briggsae/all_strain_predictions/cb_64_strains.tsv", col_names = "strain") %>% dplyr::pull()
 
@@ -375,7 +384,6 @@ ggplot() +
 
 
 
-
 # Plotting conservation
 conserv <- strain_count_ce %>% dplyr::left_join(strain_count_cb_all, by = 'gene_id') %>%
   dplyr::rename(elegans = n_strain.x, briggsae = n_strain.y) %>%
@@ -408,6 +416,44 @@ ggplot(df_long, aes(x = gene_id, y = prop, color = Species)) +
         axis.text.x = element_text(angle = 60, hjust = 1),
         axis.title.y = element_text(size = 14, color = 'black', face = 'bold')) 
 
+
+
+
+
+
+
+### Looking to see how seed specificiation classifies miRNA family
+seed_grouping_seed <- all_predictions %>%
+  dplyr::filter(seed != "seed=(None)") %>%
+  dplyr::group_by(seed) %>%
+  dplyr::mutate(genes_per_seed = n_distinct(gene_id)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(gene_id, seed, genes_per_seed) %>%
+  dplyr::filter(genes_per_seed == 2)
+
+seed_grouping_gene_id <- all_predictions %>%
+  dplyr::filter(seed != "seed=(None)") %>%
+  dplyr::group_by(gene_id) %>%
+  dplyr::mutate(unique_seeds = n_distinct(seed)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(gene_id, seed, unique_seeds) %>% 
+  dplyr::filter(unique_seeds > 1)
+  
+seed_grouping_seed_ce <- all_predictions_ce %>%
+  dplyr::filter(seed != "seed=(None)") %>%
+  dplyr::group_by(seed) %>%
+  dplyr::mutate(genes_per_seed = n_distinct(gene_id)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(gene_id, seed, genes_per_seed) %>%
+  dplyr::filter(genes_per_seed == 2)
+
+seed_grouping_gene_id_ce <- all_predictions_ce %>%
+  dplyr::filter(seed != "seed=(None)") %>%
+  dplyr::group_by(gene_id) %>%
+  dplyr::mutate(unique_seeds = n_distinct(seed)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(gene_id, seed, unique_seeds) %>% 
+  dplyr::filter(unique_seeds > 1)
 
 
 
