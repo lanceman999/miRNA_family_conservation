@@ -341,7 +341,7 @@ the_most_cb <- all_predictions %>%
   dplyr::ungroup() %>%
   dplyr::distinct(strain, allfam_count)
 
-unique_families <- counts %>% dplyr::distinct(gene_id) %>% dplyr::pull()
+# unique_families <- counts %>% dplyr::distinct(gene_id) %>% dplyr::pull()
 
 QX_counts <- counts %>% dplyr::filter(strain == "QX1410") %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count) %>% dplyr::mutate(strain_count = 1)
 AF_counts <- counts %>% dplyr::filter(strain == 'AF16') %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count)%>% dplyr::mutate(strain_count = 1)
@@ -529,7 +529,9 @@ counts <- all_predictions_ce %>%
   dplyr::mutate(count = n()) %>%
   dplyr::ungroup()
 
-unique_families_unfiltered <- all_predictions_ce %>% dplyr::distinct(gene_id) %>% dplyr::filter(!gene_id %in% unique_families)
+unique_families_unfiltered_ce <- all_predictions_ce %>% dplyr::distinct(gene_id)  #%>% dplyr::filter(!gene_id %in% unique_families)
+
+unique_CE <- unique_families_unfiltered_ce %>% dplyr::mutate(in_briggsae = ifelse(gene_id %in% unique_families_unfiltered_cb, T, F))
 
 N2_counts <- counts %>% dplyr::filter(strain == "N2") %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count) %>% dplyr::mutate(strain_count = 1)
 CGC1_counts <- counts %>% dplyr::filter(strain == 'CGC1') %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count)%>% dplyr::mutate(strain_count = 1)
@@ -599,9 +601,9 @@ cb_strains <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mi
 counts <- all_predictions %>%
   dplyr::group_by(gene_id,strain) %>%
   dplyr::mutate(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::filter(gene_id == "Mir-36") %>%
-  dplyr::distinct(strain,count)
+  dplyr::ungroup() #%>% 
+  # dplyr::filter(gene_id == "Mir-36") %>%
+  # dplyr::distinct(strain,count)
 
 
 the_most_cb <- all_predictions %>%
@@ -611,7 +613,9 @@ the_most_cb <- all_predictions %>%
   dplyr::ungroup() %>%
   dplyr::distinct(strain, allfam_count)
 
-unique_families_unfiltered <- all_predictions %>% dplyr::distinct(gene_id) %>% dplyr::filter(!gene_id %in% unique_families)
+unique_families_unfiltered_cb <- all_predictions %>% dplyr::distinct(gene_id) %>% dplyr::pull() #%>% dplyr::filter(!gene_id %in% unique_families)
+
+unique_CB <- unique_families_unfiltered_cb %>% dplyr::mutate(in_elegans = ifelse(gene_id %in% unique_families_unfiltered_ce, T, F))
 
 QX_counts <- counts %>% dplyr::filter(strain == "QX1410") %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count) %>% dplyr::mutate(strain_count = 1)
 AF_counts <- counts %>% dplyr::filter(strain == 'AF16') %>% dplyr::select(strain,gene_id,count) %>% dplyr::distinct(gene_id, .keep_all = T) %>% dplyr::mutate(fewest = count, most = count) %>% dplyr::rename(average = count)%>% dplyr::mutate(strain_count = 1)
@@ -721,6 +725,66 @@ ggplot(df_long, aes(x = gene_id, y = prop, color = Species)) +
 # Plotting correlation of miRNA family count and cumulative SV length
 #############################################################################################
 #############################################################################################
+# CE
+ce_strain_fam_count <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/manuscript_repos/miRNA_family_conservation/processed_data/MirMachine/142_Ce_strains_allfamilies.filtered.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
+  dplyr::select("contig","start","end","strand","gene_id","seed","strain") %>% 
+  dplyr::distinct(gene_id, strain) %>% 
+  dplyr::group_by(strain) %>%
+  dplyr::mutate(family_count = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::distinct(strain,family_count)
+
+ce_strain_sv_span <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/gene_annotation/processed_data/pav/elegans/strain_dirs/all_vcfs/141_over50_PASS_variants.tsv", col_names = c("chrom", "pos", "ref", "alt", "filter", "sv_type","sv_length","strain")) %>% dplyr::select(-filter) %>% 
+  dplyr::mutate(sv_length = abs(sv_length)) %>%
+  dplyr::group_by(strain) %>%
+  dplyr::mutate(sv_span = sum(sv_length)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(strain, sv_span) %>%
+  dplyr::arrange(desc(sv_span))
+
+ce_plt <- ce_strain_fam_count %>% dplyr::left_join(ce_strain_sv_span, by = "strain")
+
+ggplot(ce_plt) + 
+  geom_point(aes(x = family_count, y = sv_span / 1e6, color = strain), size = 3) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 16, color = 'black'),
+    axis.title = element_text(size = 18, color = 'black'),
+    legend.title = element_text(size = 18, color = 'black'),
+    legend.text = element_text(size = 16, color = 'black')) +
+  labs(y = "Structural variation span (Mb)", x = "Unique miRNA families", color = "Strain") +
+  guides(color = guide_legend(nrow = 40, byrow = TRUE))
+
+
+# ggplot(ce_plt, aes(x = family_count, y = sv_span / 1e6)) + 
+#   geom_jitter(width = 0.12, height = 0, alpha = 0.8, size = 3, color = '#DB6333') +
+#   geom_smooth(method = "lm", color = "black", se = TRUE) +
+#   theme_classic(base_size = 16) +
+#   labs(
+#     y = "Structural variation span (Mb)",
+#     x = "Unique miRNA families") +
+#   theme(
+#     panel.background = element_blank(),
+#     panel.border = element_rect(color = 'black', fill = NA),
+#     axis.text = element_text(size = 16, color = 'black'),
+#     axis.title = element_text(size = 18, color = 'black'),
+#     legend.title = element_text(size = 18, color = 'black'),
+#     legend.text = element_text(size = 16, color = 'black')) 
+
+
+
+# CB
+cb_strain_fam_count <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/manuscript_repos/miRNA_family_conservation/processed_data/MirMachine/64_Cb_strains_allfamilies.UNFILTERED.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
+  dplyr::select("contig","start","end","strand","gene_id","seed","strain") %>%
+  dplyr::distinct(gene_id, strain) %>% 
+  dplyr::group_by(strain) %>%
+  dplyr::mutate(family_count = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::distinct(strain,family_count)
+
+
+
 
 
 
