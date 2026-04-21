@@ -170,7 +170,7 @@ QX
 # Looking at alignments of strains that do not have a lys-6 miRNA
 ############ elegans
 nucmer_ce <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/assemblies/synteny_vis/elegans/nucmer_aln_WSs/142_nucmer_ECA741CGC1.tsv", col_names = c("N2S","N2E","WSS","WSE","L1","L2","IDY","LENR","LENQ","N2_chr","contig","strain")) %>%
-  dplyr::select(-L1,-L2,-LENR,-LENQ) %>% dplyr::filter(strain != "ECA396")
+  dplyr::select(-L1,-LENR) %>% dplyr::filter(strain != "ECA396")
 
 all_predictions <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/mir35/processed_data/elegans/all_strain_predictions/ce_all_142_updated_20260212.tsv", col_names = c("contig","mirmachine","miRNA","start","end","score","strand",'phase',"gene_id","seed","strain")) %>% 
   dplyr::select("contig","start","end","strand","gene_id","seed","strain") 
@@ -346,6 +346,169 @@ chromII_mir35 <- ggplot(CGC_QX %>% dplyr::filter(QX_chrom == "II" & CGC2_scaffol
   labs(y = "CGC2 genome coordinates (Mb)", x = "QX1410 genome coordinates (Mb)") +
   coord_cartesian(xlim = c(8.1660,8.1675), ylim = c(8.203,8.2045))
 chromII_mir35
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Looking at Mir-36 CNV in Ce - ECA1493, ECA3088, JU258, ECA2968
+select_nuc <- nucmer_ce %>%
+  dplyr::filter(strain == "ECA1493" | strain == "ECA3088" | strain == "JU258" | strain == "ECA2968") %>%
+  dplyr::filter(N2_chr == "II")
+
+mir_cnv <- all_predictions %>% 
+  dplyr::filter(gene_id == "Mir-36") %>%
+  dplyr::filter(strain == "ECA1493" | strain == "ECA3088" | strain == "JU258" | strain == "ECA2968")
+
+n2_mir <- all_predictions %>%
+  dplyr::filter(gene_id == "Mir-36" & strain == "N2")
+
+
+mir1 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "ECA1493")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333", alpha = 0.5) +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "ECA1493"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "firebrick", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = IDY), size = 1.5) + 
+  scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5),
+    legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "ECA1493") +
+  coord_cartesian(xlim = c(11.537,11.539), ylim = c(12.2630,12.2650))
+mir1
+
+mir2 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "ECA3088")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333", alpha = 0.5) +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "ECA3088"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "firebrick", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = IDY), size = 1.5) + 
+  scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5),
+    legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "ECA3088") +
+  coord_cartesian(xlim = c(11.537,11.539), ylim = c(3.8925,3.894))
+mir2
+
+mir3 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "JU258")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333", alpha = 0.5) +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "JU258"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "firebrick", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = IDY), size = 1.5) + 
+  scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5),
+    legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "JU258") +
+  coord_cartesian(xlim = c(11.537,11.539), ylim = c(1.214,1.2150))
+mir3
+
+mir4 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "ECA2968")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333", alpha = 0.5) +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "ECA2968"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "violet", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = IDY), size = 1.5) + 
+  scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5),
+    legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "ECA2968") +
+  coord_cartesian(xlim = c(11.537,11.539), ylim = c(3.8462,3.8477))
+mir4
+
+mir4_1 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "ECA2968")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333", alpha = 0.5) +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "ECA2968"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "violet", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = IDY), size = 1.5) + 
+  scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5),
+    legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "ECA2968") +
+  coord_cartesian(xlim = c(11.8875,11.8925), ylim = c(0,3.5))
+mir4_1
+
+mir4_2 <- ggplot(data = select_nuc %>% dplyr::filter(strain == "ECA2968")) + 
+  geom_rect(data = n2_mir, aes(xmin = start / 1e6, xmax = end / 1e6, ymin = -Inf, ymax = Inf), fill = "#DB6333") +
+  geom_rect(data = mir_cnv %>% dplyr::filter(strain == "ECA2968"), aes(xmin = -Inf, xmax = Inf, ymin = start / 1e6, ymax = end / 1e6), fill = "violet", alpha = 0.5) +
+  geom_segment(aes(x = N2S /1e6, xend = N2E /1e6, y = WSS /1e6, yend = WSE /1e6, color = contig), size = 1.5) + 
+  # scale_color_gradient(low = "gold", high = "black", limits = c(80, 100), name = "Percent ID") +
+  # facet_wrap(~chrom, nrow = 1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 12, color = 'black'),
+    axis.title = element_text(size = 14, color = 'black'),
+    strip.text = element_text(size = 16, color = 'black'),
+    plot.title = element_text(size = 18, color = 'black', hjust = 0.5)
+    # legend.position = 'none'
+  ) +
+  labs(x = "N2 genome position (Mb)", y = "Wild strain contig position (Mb)", title = "ECA2968") +
+  coord_cartesian(xlim = c(11.8, 12), ylim = c(0,3.5))
+mir4_2
+
+hmm <- nucmer_ce %>% dplyr::filter(strain == "ECA2968") %>% dplyr::filter(contig == "ptg000032l" | contig == "ptg000003l") %>% 
+  dplyr::group_by(N2_chr, contig) %>%
+  dplyr::mutate(contig_span = sum(L2)) %>%
+  dplyr::ungroup() %>%
+  dplyr::distinct(N2_chr, contig, contig_span, LENQ)
+
+
+
+
+cowplot::plot_grid(
+  mir1, mir2, mir3, mir4, mir4_1, mir4_2,
+  nrow = 2
+)
+
 
 
 
