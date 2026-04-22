@@ -742,10 +742,15 @@ ce_strain_sv_span <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/
   dplyr::distinct(strain, sv_span) %>%
   dplyr::arrange(desc(sv_span))
 
-ce_plt <- ce_strain_fam_count %>% dplyr::left_join(ce_strain_sv_span, by = "strain")
+snps_per_strain <- readr::read_tsv("/vast/eande106/projects/Lance/THESIS_WORK/misc/henrique_lab/140_strains_ALT_SNP_count.tsv", col_names = c("strain","snp_count"))
 
-ggplot(ce_plt) + 
-  geom_point(aes(x = family_count, y = sv_span / 1e6, color = strain), size = 3) +
+ce_plt <- ce_strain_fam_count %>% dplyr::left_join(ce_strain_sv_span, by = "strain") %>% dplyr::left_join(snps_per_strain, by = "strain") %>%
+  dplyr::filter(strain != "N2" & strain != "CGC1")
+
+# SVs
+ggplot(ce_plt, aes(x = factor(family_count), y = sv_span / 1e6)) + 
+  geom_violin(fill = "lightgray", alpha = 0, trim = FALSE) +
+  geom_jitter(aes(color = strain), size = 3, width = 0.1) +
   theme(
     panel.background = element_blank(),
     panel.border = element_rect(color = 'black', fill = NA),
@@ -756,21 +761,19 @@ ggplot(ce_plt) +
   labs(y = "Structural variation span (Mb)", x = "Unique miRNA families", color = "Strain") +
   guides(color = guide_legend(nrow = 40, byrow = TRUE))
 
-
-# ggplot(ce_plt, aes(x = family_count, y = sv_span / 1e6)) + 
-#   geom_jitter(width = 0.12, height = 0, alpha = 0.8, size = 3, color = '#DB6333') +
-#   geom_smooth(method = "lm", color = "black", se = TRUE) +
-#   theme_classic(base_size = 16) +
-#   labs(
-#     y = "Structural variation span (Mb)",
-#     x = "Unique miRNA families") +
-#   theme(
-#     panel.background = element_blank(),
-#     panel.border = element_rect(color = 'black', fill = NA),
-#     axis.text = element_text(size = 16, color = 'black'),
-#     axis.title = element_text(size = 18, color = 'black'),
-#     legend.title = element_text(size = 18, color = 'black'),
-#     legend.text = element_text(size = 16, color = 'black')) 
+# SNPs
+ggplot(ce_plt, aes(x = factor(family_count), y = snp_count / 1e6)) + 
+  geom_violin(fill = "lightgray", alpha = 0, trim = FALSE) +
+  geom_jitter(aes(color = strain), size = 3, width = 0.1) +
+  theme(
+    panel.background = element_blank(),
+    panel.border = element_rect(color = 'black', fill = NA),
+    axis.text = element_text(size = 16, color = 'black'),
+    axis.title = element_text(size = 18, color = 'black'),
+    legend.title = element_text(size = 18, color = 'black'),
+    legend.text = element_text(size = 16, color = 'black')) +
+  labs(y = "SNPs (1e6)", x = "Unique miRNA families", color = "Strain") +
+  guides(color = guide_legend(nrow = 40, byrow = TRUE))
 
 
 
